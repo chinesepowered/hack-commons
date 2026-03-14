@@ -8,7 +8,7 @@
 cd backend
 cp .env.example .env
 # Optional: add API keys for enhanced features
-# OPENAI_API_KEY=sk-... (enables real LLM responses)
+# LLM_API_KEY=sk-... (enables real LLM responses)
 # ELEVENLABS_API_KEY=... (enables voice)
 uv sync
 uv run uvicorn src.main:app --reload --port 8000
@@ -37,9 +37,7 @@ This creates Solana devnet wallets for all 5 agents and airdrops 1 SOL each.
 
 ## Production Deployment
 
-### Backend → Railway / Fly.io / Render
-
-**Railway (recommended):**
+### Backend → Railway
 
 1. Create a new Railway project
 2. Connect to GitHub repo
@@ -47,31 +45,6 @@ This creates Solana devnet wallets for all 5 agents and airdrops 1 SOL each.
 4. Set build command: `pip install uv && uv sync`
 5. Set start command: `uv run uvicorn src.main:app --host 0.0.0.0 --port $PORT`
 6. Add environment variables from `.env.example`
-
-**Fly.io alternative:**
-
-Create `backend/fly.toml`:
-```toml
-app = "agentcommerce-api"
-primary_region = "sjc"
-
-[build]
-  builder = "paketobuildpacks/builder:base"
-
-[env]
-  PORT = "8080"
-
-[http_service]
-  internal_port = 8080
-  force_https = true
-```
-
-```bash
-cd backend
-fly launch
-fly secrets set OPENAI_API_KEY=sk-... SOLANA_RPC_URL=https://api.devnet.solana.com
-fly deploy
-```
 
 ### Frontend → Vercel
 
@@ -115,7 +88,7 @@ Save the output — it contains the agent public keys and collection address.
 - [ ] Wallets initialized (click the button or curl)
 - [ ] Browser open to dashboard at full screen
 - [ ] If voice: ElevenLabs API key set
-- [ ] If live LLM: OpenAI or Anthropic key set
+- [ ] If live LLM: LLM_API_KEY set
 
 ### Script
 
@@ -196,11 +169,12 @@ Show final stats: tasks completed, SOL spent, transactions processed.
 # Required: none! System works with zero config.
 
 # Recommended for impressive demo:
-OPENAI_API_KEY=sk-...          # Real LLM responses (best demo quality)
+LLM_API_KEY=sk-...             # Any OpenAI-compatible API key
+LLM_MODEL=gpt-4o              # Model to use (default: gpt-4o)
+LLM_BASE_URL=https://api.openai.com/v1  # Endpoint (default: OpenAI)
 ELEVENLABS_API_KEY=...         # Voice interface
 
 # Optional enhancements:
-ANTHROPIC_API_KEY=...          # Alternative LLM provider
 KALIBR_API_KEY=...             # Multi-model routing + resilience metrics
 UNBROWSE_URL=http://localhost:6969  # Live web data extraction
 HUMAN_PASSPORT_ENABLED=true   # Sybil-resistant auth
@@ -236,5 +210,5 @@ pnpm build  # Check for errors
 - Check browser console for connection errors
 
 **No LLM responses (just "Processed: ..."):**
-- This means no API key is set — add OPENAI_API_KEY to .env
+- This means no API key is set — add LLM_API_KEY to .env
 - The mock responses will still work and look realistic for demo

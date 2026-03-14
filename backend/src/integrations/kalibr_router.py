@@ -8,7 +8,7 @@ async def routed_completion(
     messages: list[dict],
     json_mode: bool = False,
 ) -> str:
-    """Route LLM completion through Kalibr if available, otherwise direct OpenAI/Anthropic."""
+    """Route LLM completion through Kalibr if available, otherwise direct OpenAI-compatible endpoint."""
 
     # Try Kalibr first
     try:
@@ -16,7 +16,7 @@ async def routed_completion(
             from kalibr import Router
             router = Router(
                 goal=goal,
-                paths=["gpt-4o", "claude-sonnet-4-20250514"],
+                paths=[settings.llm_model],
                 success_when=lambda output: len(output) > 0,
             )
             response = router.completion(messages=messages)
@@ -26,48 +26,22 @@ async def routed_completion(
     except Exception:
         pass
 
-    # Fallback: direct OpenAI
+    # Fallback: OpenAI-compatible endpoint
     try:
-        if settings.openai_api_key:
+        if settings.llm_api_key:
             from openai import AsyncOpenAI
-            client = AsyncOpenAI(api_key=settings.openai_api_key)
+            client = AsyncOpenAI(
+                api_key=settings.llm_api_key,
+                base_url=settings.llm_base_url,
+            )
             kwargs = {
-                "model": "gpt-4o",
+                "model": settings.llm_model,
                 "messages": messages,
             }
             if json_mode:
                 kwargs["response_format"] = {"type": "json_object"}
             response = await client.chat.completions.create(**kwargs)
             result = response.choices[0].message.content
-            if result:
-                return result
-    except Exception:
-        pass
-
-    # Fallback: direct Anthropic
-    try:
-        if settings.anthropic_api_key:
-            import anthropic
-            client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-            # Extract system message if present
-            system_msg = ""
-            user_messages = []
-            for m in messages:
-                if m["role"] == "system":
-                    system_msg = m["content"]
-                else:
-                    user_messages.append(m)
-            if not user_messages:
-                user_messages = [{"role": "user", "content": "Please respond."}]
-            kwargs = {
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 1024,
-                "messages": user_messages,
-            }
-            if system_msg:
-                kwargs["system"] = system_msg
-            response = await client.messages.create(**kwargs)
-            result = response.content[0].text
             if result:
                 return result
     except Exception:

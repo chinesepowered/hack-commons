@@ -95,7 +95,7 @@ This is how agents pay each other — pure HTTP, no intermediaries:
 | Backend | Python, FastAPI, uv |
 | Frontend | Next.js, React, Tailwind CSS, pnpm |
 | Blockchain | Solana (devnet), Metaplex Agent Registry, x402 |
-| LLM Routing | Kalibr (fallback: OpenAI / Anthropic / mock) |
+| LLM Routing | Kalibr (fallback: any OpenAI-compatible API / mock) |
 | Web Intelligence | Unbrowse (fallback: standard HTTP) |
 | Voice | ElevenLabs (fallback: text chat) |
 | Auth | Human Passport (fallback: wallet auth) |
@@ -167,10 +167,10 @@ Every integration gracefully degrades. The entire system works with **zero API k
 | Integration | Purpose | Fallback |
 |-------------|---------|----------|
 | **Unbrowse** | Web data extraction for Researcher | Mock research data |
-| **Kalibr** | Multi-model LLM routing + resilience metrics | Direct OpenAI → mock |
+| **Kalibr** | Multi-model LLM routing + resilience metrics | Direct LLM API → mock |
 | **ElevenLabs** | Voice interface (talk to your agents!) | Text-only chat |
 | **Human Passport** | Sybil-resistant auth for task posting | Basic wallet auth |
-| **OpenAI / Anthropic** | LLM intelligence for agents | Realistic mock responses |
+| **LLM API** | Any OpenAI-compatible endpoint (OpenAI, Together, Groq, etc.) | Realistic mock responses |
 
 ## 🛡️ Human Sovereignty
 

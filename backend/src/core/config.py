@@ -4,8 +4,9 @@ from typing import Optional
 class Settings(BaseSettings):
     solana_rpc_url: str = "https://api.devnet.solana.com"
     solana_ws_url: str = "wss://api.devnet.solana.com"
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_model: str = "gpt-4o"
+    llm_base_url: str = "https://api.openai.com/v1"
     elevenlabs_api_key: Optional[str] = None
     kalibr_api_key: Optional[str] = None
     unbrowse_url: str = "http://localhost:6969"
