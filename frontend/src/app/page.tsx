@@ -63,6 +63,11 @@ const EVENT_ICONS: Record<string, string> = {
   airdrop: "\u{1F4A7}",
   transfer: "\u{1F4B8}",
   payment: "\u{1F4B0}",
+  payment_required: "\u{1F510}",
+  payment_verified: "\u2705",
+  payment_completed: "\u{1F4B8}",
+  service_executing: "\u2699\uFE0F",
+  demo: "\u{1F3AC}",
 };
 
 function getEventIcon(type: string): string {
@@ -82,16 +87,53 @@ function truncateAddress(addr: string): string {
   return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
 }
 
-function formatEventData(data: Record<string, unknown>): string {
+function formatEventData(data: Record<string, unknown>): React.ReactNode {
   const filtered = Object.fromEntries(
     Object.entries(data).filter(
       ([k]) => !["agent_id", "agent_name"].includes(k)
     )
   );
 
-  if (filtered.message) return String(filtered.message);
+  // Priority display fields
+  if (filtered.message) {
+    const msg = String(filtered.message);
+    const explorerUrl = filtered.explorer_url as string | undefined;
+    if (explorerUrl) {
+      return (
+        <span>
+          {msg}{" "}
+          <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            [View on Explorer]
+          </a>
+        </span>
+      );
+    }
+    return msg;
+  }
+
+  // Show explorer URL if present
+  if (filtered.explorer_url) {
+    return (
+      <a href={String(filtered.explorer_url)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+        View transaction on Solana Explorer
+      </a>
+    );
+  }
+
   if (filtered.summary) return String(filtered.summary);
   if (filtered.confirmation) return String(filtered.confirmation);
+
+  // Show payment info prominently
+  if (filtered.amount_sol !== undefined) {
+    return (
+      <span>
+        <span className="text-emerald-400 font-mono font-medium">{Number(filtered.amount_sol).toFixed(4)} SOL</span>
+        {!!filtered.signature && (
+          <span className="text-zinc-600 ml-2">sig: {String(filtered.signature).slice(0, 8)}...</span>
+        )}
+      </span>
+    );
+  }
 
   const meaningful = Object.entries(filtered)
     .filter(([, v]) => typeof v === "string" || typeof v === "number")
@@ -146,15 +188,20 @@ export default function Dashboard() {
       fetchAgents();
 
       // Track transactions
-      if (event.type === "solana.transfer" || event.type === "agent.payment") {
+      if (
+        event.type === "solana.transfer" ||
+        event.type === "solana.airdrop" ||
+        event.type.includes("payment.completed") ||
+        event.type === "x402.payment_verified"
+      ) {
         setTransactions((prev) => [
           ...prev,
           {
-            from: String(event.data.from || ""),
-            to: String(event.data.to || ""),
-            amount_sol: Number(event.data.amount_sol || 0),
-            signature: String(event.data.signature || ""),
-            explorer_url: String(event.data.explorer_url || ""),
+            from: String(event.data.from || event.data.payer || event.data.agent_name || ""),
+            to: String(event.data.to || event.data.recipient || ""),
+            amount_sol: Number(event.data.amount_sol || event.data.bid_price || 0),
+            signature: String(event.data.signature || event.data.payment_signature || ""),
+            explorer_url: String(event.data.explorer_url || (event.data.signature ? `https://explorer.solana.com/tx/${event.data.signature}?cluster=devnet` : "")),
             timestamp: event.timestamp,
           },
         ]);
@@ -261,6 +308,10 @@ export default function Dashboard() {
             <div className="text-center">
               <p className="text-zinc-500 text-[11px]">Spent</p>
               <p className="font-mono font-semibold">{totalSpent.toFixed(4)} SOL</p>
+            </div>
+            <div className="text-center">
+              <p className="text-zinc-500 text-[11px]">Txns</p>
+              <p className="font-mono font-semibold">{transactions.length}</p>
             </div>
             <div className="text-center">
               <p className="text-zinc-500 text-[11px]">Active</p>

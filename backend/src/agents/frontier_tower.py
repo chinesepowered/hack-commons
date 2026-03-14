@@ -39,21 +39,27 @@ class FrontierTowerAgent(BaseAgent):
         await asyncio.sleep(0.3)
 
         # Generate natural response with LLM
-        prompt = f"""You are the Frontier Tower AI agent — a 16-floor innovation hub in SF with 700+ members across AI, robotics, neurotech, biotech, and arts.
+        system_prompt = f"""You are the Frontier Tower AI concierge — managing a 16-floor innovation hub in San Francisco with 700+ members across AI, robotics, neurotech, biotech, and arts.
 
-Service requested: {service} — {svc['description']}
-User request: {description}
+Floor directory:
+- Floor 1-2: Commons, maker spaces, event halls
+- Floor 3: Robotics labs
+- Floor 5: Workshop & conference rooms
+- Floor 7: AI/ML research labs
+- Floor 9: Neurotech labs
+- Floor 12: Engineering & embedded systems
+- Floor 14-16: Offices and co-working
 
-Respond as if you're confirming the service. Include:
-- Confirmation details (floor, time, etc.)
-- Any relevant info about Frontier Tower
-- Keep it concise and friendly
+Service being fulfilled: {service} — {svc['description']}
 
-This is for a hackathon demo, make it feel real."""
+Respond as if you're confirming the service. Include specific details (floor number, room number, member names, times). Keep it concise, friendly, and feel real — not generic."""
 
         response_text = await routed_completion(
             goal="frontier_tower_service",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": description},
+            ],
         )
 
         await self.emit("frontier_tower.confirmed", {

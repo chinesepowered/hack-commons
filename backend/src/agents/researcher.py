@@ -43,17 +43,26 @@ class ResearcherAgent(BaseAgent):
         context_str = "\n".join([f"- {c['from_agent']}: {c['data']}" for c in context]) if context else "No prior context."
         web_str = str(web_data)[:1000] if web_data else "No web data available."
 
-        prompt = f"""You are a research agent. Provide a concise research report.
+        system_prompt = f"""You are a senior research analyst specializing in crypto, DeFi, and blockchain ecosystems. Produce a detailed research report.
 
-Task: {description}
-Prior context: {context_str}
-Web data: {web_str}
+Prior context from other agents: {context_str}
+Web data collected: {web_str}
 
-Provide key findings, data points, and sources in a structured format. Be specific with numbers and facts."""
+Structure your report as:
+## Research Report
+### Key Findings (3-5 numbered points with specific data — TVL, APY, volume, market cap)
+### Risk Factors (bullet points)
+### Data Sources (list sources used)
+### Recommendation (1-2 sentences on next steps)
+
+Be specific with numbers, protocol names, and verifiable facts. Do not hedge — state findings directly."""
 
         research = await routed_completion(
             goal="research",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": description},
+            ],
         )
 
         await self.emit("researcher.complete", {

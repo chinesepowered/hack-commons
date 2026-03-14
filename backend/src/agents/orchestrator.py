@@ -134,26 +134,27 @@ class OrchestratorAgent(BaseAgent):
 
     async def _decompose(self, task: dict) -> list[dict]:
         """Use LLM to intelligently decompose a task."""
-        prompt = f"""You are an AI task orchestrator. Decompose this task into sub-tasks for specialist agents.
+        prompt = f"""You are an AI task orchestrator managing a multi-agent economy on Solana. Decompose this task into the minimum necessary sub-tasks.
 
-Available agents:
-- researcher: Gathers web data and intelligence
-- analyst: Processes data, generates insights and recommendations
-- executor: Takes on-chain actions (swaps, LP, transfers)
-- frontier_tower: Frontier Tower building services (room booking, bounties, resource matching, events, day passes)
+Available specialist agents:
+- researcher: Gathers web data via Unbrowse, market intelligence, protocol TVL/APY data, competitive analysis
+- analyst: Risk assessment, yield analysis, portfolio recommendations, data synthesis from research
+- executor: On-chain Solana actions — swaps via Jupiter, LP on Orca/Raydium, staking, token transfers
+- frontier_tower: Frontier Tower (16-floor SF innovation hub) — room booking, bounty posting, expert matching, event coordination
 
 Task: {task.get("description", "")}
 
 Respond with JSON only:
 {{"sub_tasks": [
-  {{"type": "agent_type", "description": "what this agent should do", "priority": 1}}
+  {{"type": "agent_type", "description": "specific action this agent should take", "priority": 1}}
 ]}}
 
 Rules:
-- Only include agents that are truly needed
-- Order by priority (1 = first)
-- Be specific in descriptions
-- If the task involves Frontier Tower building services, include frontier_tower agent"""
+- Only include agents that are truly needed — fewer is better
+- Priority 1 runs first, priority 2 depends on priority 1 results, etc.
+- Be specific in descriptions — include protocol names, metrics, or actions
+- If the task involves Frontier Tower building services, use frontier_tower
+- If the task needs data gathering before analysis, use researcher then analyst"""
 
         try:
             response = await routed_completion(

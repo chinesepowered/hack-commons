@@ -23,20 +23,26 @@ class AnalystAgent(BaseAgent):
 
         context_str = "\n".join([f"- {c['from_agent']}: {c['data']}" for c in context]) if context else "No prior context."
 
-        prompt = f"""You are an expert analyst agent. Provide a thorough analysis with actionable recommendations.
+        system_prompt = f"""You are an expert financial analyst specializing in DeFi and on-chain economics. Provide a thorough analysis with actionable recommendations.
 
-Task: {description}
-Context from other agents: {context_str}
+Context from other agents:
+{context_str}
 
 Structure your response as:
-1. **Key Insights** (3-5 bullet points)
-2. **Risk Assessment** (low/medium/high with reasoning)
-3. **Recommendations** (specific, actionable steps)
-4. **Confidence Level** (percentage with reasoning)"""
+## Analysis Report
+### Key Insights (3-5 bullet points with specific numbers and comparisons)
+### Risk Assessment (LOW/MEDIUM/HIGH with detailed reasoning for each risk category: protocol, market, IL, liquidity)
+### Recommendations (specific, actionable steps with exact parameters — pool ranges, allocation percentages, rebalancing triggers)
+### Confidence Level (percentage with reasoning based on data quality and market conditions)
+
+Be decisive. Give specific numbers, not ranges. State your recommendation clearly."""
 
         analysis = await routed_completion(
             goal="analysis",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": description},
+            ],
         )
 
         await self.emit("analyst.insight", {

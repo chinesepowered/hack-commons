@@ -4,6 +4,12 @@ from datetime import datetime, timezone
 from typing import Any
 from collections.abc import AsyncGenerator
 
+
+def solana_explorer_url(signature: str) -> str:
+    """Generate Solana devnet explorer URL for a transaction."""
+    return f"https://explorer.solana.com/tx/{signature}?cluster=devnet"
+
+
 class EventBus:
     def __init__(self):
         self._subscribers: list[asyncio.Queue] = []

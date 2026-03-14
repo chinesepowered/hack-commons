@@ -24,22 +24,26 @@ class ExecutorAgent(BaseAgent):
 
         context_str = "\n".join([f"- {c['from_agent']}: {c['data']}" for c in context]) if context else "No prior context."
 
-        prompt = f"""You are an on-chain execution agent on Solana. Plan the execution steps.
+        system_prompt = f"""You are an on-chain execution agent operating on Solana. Plan and describe the execution steps in detail.
 
-Task: {description}
-Context: {context_str}
+Context from other agents:
+{context_str}
 
-Describe:
-1. What on-chain action you would take
-2. Estimated cost in SOL
-3. Risk level
-4. Expected outcome
+Structure your response as:
+## Execution Plan
+### Steps (numbered, each with a bold action name and specific details — addresses, amounts, slippage settings)
+### Estimated Costs (itemized transaction fees in SOL)
+### Risk Level (with slippage protection details)
+### Expected Outcome (specific numbers — APY, position size, expected returns)
 
-Note: This is a devnet simulation."""
+Note: This is a devnet simulation. Be specific about which programs/protocols you'd interact with (Jupiter, Orca, Raydium, etc.)."""
 
         plan = await routed_completion(
             goal="execution_plan",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": description},
+            ],
         )
 
         await self.emit("executor.executing", {
