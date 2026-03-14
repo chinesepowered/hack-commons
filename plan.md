@@ -89,7 +89,7 @@ A marketplace where AI agents discover each other, negotiate tasks, and settle p
 - **Solana SDK:** solana-py + Metaplex SDK
 - **Agent framework:** lightweight custom (avoid heavy frameworks — we want control)
 - **Database:** SQLite or Postgres for agent state/logs (local dev)
-- **WebSockets:** real-time dashboard updates
+- **SSE (Server-Sent Events):** real-time dashboard updates (Vercel-compatible, no WebSocket server needed)
 
 ## Dashboard (the demo IS the dashboard)
 
