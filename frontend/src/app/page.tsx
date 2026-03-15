@@ -149,7 +149,7 @@ export default function Dashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
   const [walletsInitialized, setWalletsInitialized] = useState(false);
   const [initializingWallets, setInitializingWallets] = useState(false);
-  const eventsEndRef = useRef<HTMLDivElement>(null);
+  const eventsContainerRef = useRef<HTMLDivElement>(null);
   const lastEventTimestamp = useRef<string>("");
 
   const fetchAgents = useCallback((refresh = false) => {
@@ -231,7 +231,8 @@ export default function Dashboard() {
   }, [fetchAgents]);
 
   useEffect(() => {
-    eventsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = eventsContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [events]);
 
   const initWallets = async () => {
@@ -456,7 +457,7 @@ export default function Dashboard() {
               <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
                 Live Activity
               </h2>
-              <div className="bg-[#12121a] rounded-xl border border-[#1e1e2e] h-[500px] overflow-y-auto p-3 space-y-1.5">
+              <div ref={eventsContainerRef} className="bg-[#12121a] rounded-xl border border-[#1e1e2e] h-[500px] overflow-y-auto p-3 space-y-1.5">
                 {events.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-zinc-600">
                     <span className="text-4xl mb-3">{"\u{1F916}"}</span>
@@ -498,7 +499,6 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
-                <div ref={eventsEndRef} />
               </div>
             </div>
 

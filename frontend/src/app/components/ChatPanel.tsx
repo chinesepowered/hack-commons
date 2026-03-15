@@ -16,7 +16,7 @@ export default function ChatPanel() {
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [useVoice, setUseVoice] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -28,7 +28,8 @@ export default function ChatPanel() {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const sendMessage = async (text: string) => {
@@ -167,7 +168,7 @@ export default function ChatPanel() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center text-zinc-600 text-sm py-8">
             <p>Ask the orchestrator anything</p>
@@ -209,7 +210,6 @@ export default function ChatPanel() {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
