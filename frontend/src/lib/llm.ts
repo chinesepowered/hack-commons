@@ -60,34 +60,34 @@ function mockResponse(
         (w) => taskLower.includes(w)
       )
     ) {
-      subTasks.push({ type: "frontier_tower", description: "Handle Frontier Tower service request", priority: 1 });
+      subTasks.push({ type: "frontier_tower", description: taskLine, priority: 1 });
     }
     if (
       ["research", "find", "search", "data", "top", "best", "compare", "tvl", "protocol", "price"].some(
         (w) => taskLower.includes(w)
       )
     ) {
-      subTasks.push({ type: "research", description: "Gather data and intelligence on the topic", priority: 1 });
+      subTasks.push({ type: "research", description: taskLine, priority: 1 });
     }
     if (
       ["analyze", "recommend", "evaluate", "assess", "yield", "risk", "compare", "insight"].some(
         (w) => taskLower.includes(w)
       )
     ) {
-      subTasks.push({ type: "analysis", description: "Analyze gathered data and provide recommendations", priority: 2 });
+      subTasks.push({ type: "analysis", description: taskLine, priority: 2 });
     }
     if (
       ["execute", "swap", "trade", "buy", "sell", "position", "order", "stake", "lp"].some(
         (w) => taskLower.includes(w)
       )
     ) {
-      subTasks.push({ type: "execution", description: "Execute the recommended on-chain action", priority: 3 });
+      subTasks.push({ type: "execution", description: taskLine, priority: 3 });
     }
 
     if (subTasks.length === 0) {
       subTasks.push(
-        { type: "research", description: "Research the topic thoroughly", priority: 1 },
-        { type: "analysis", description: "Analyze findings and provide actionable insights", priority: 2 }
+        { type: "research", description: taskLine, priority: 1 },
+        { type: "analysis", description: taskLine, priority: 2 }
       );
     }
 
