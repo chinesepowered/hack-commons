@@ -64,6 +64,6 @@ Note: This is a devnet simulation. Be specific about which programs/protocols yo
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "execution" ? 0.0005 : null;
+    return (task.type === "execution" || task.type === "executor") ? 0.0005 : null;
   }
 }

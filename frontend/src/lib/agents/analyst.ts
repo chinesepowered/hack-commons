@@ -52,6 +52,6 @@ Be decisive. Give specific numbers, not ranges. State your recommendation clearl
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "analysis" ? 0.0002 : null;
+    return (task.type === "analysis" || task.type === "analyst") ? 0.0002 : null;
   }
 }

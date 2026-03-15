@@ -137,17 +137,17 @@ export class OrchestratorAgent extends BaseAgent {
   private async decompose(task: TaskInput): Promise<TaskInput[]> {
     const prompt = `You are an AI task orchestrator managing a multi-agent economy on Solana. Decompose this task into the minimum necessary sub-tasks.
 
-Available specialist agents:
-- researcher: Gathers web data via Unbrowse, market intelligence, protocol TVL/APY data, competitive analysis
-- analyst: Risk assessment, yield analysis, portfolio recommendations, data synthesis from research
-- executor: On-chain Solana actions — swaps via Jupiter, LP on Orca/Raydium, staking, token transfers
-- frontier_tower: Frontier Tower (16-floor SF innovation hub) — room booking, bounty posting, expert matching, event coordination
+Available specialist agents (use the exact type value shown):
+- type "research": Gathers web data via Unbrowse, market intelligence, protocol TVL/APY data, competitive analysis
+- type "analysis": Risk assessment, yield analysis, portfolio recommendations, data synthesis from research
+- type "execution": On-chain Solana actions — swaps via Jupiter, LP on Orca/Raydium, staking, token transfers
+- type "frontier_tower": Frontier Tower (16-floor SF innovation hub) — room booking, bounty posting, expert matching, event coordination
 
 Task: ${task.description || ""}
 
 Respond with JSON only:
 {"sub_tasks": [
-  {"type": "agent_type", "description": "specific action this agent should take", "priority": 1}
+  {"type": "research|analysis|execution|frontier_tower", "description": "specific action this agent should take", "priority": 1}
 ]}
 
 Rules:
