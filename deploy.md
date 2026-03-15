@@ -2,33 +2,23 @@
 
 ## Local Development (fastest)
 
-### 1. Start the backend
-
 ```bash
-cd backend
-cp .env.example .env
+cd frontend
+cp .env.example .env.local
 # Optional: add API keys for enhanced features
 # LLM_API_KEY=sk-... (enables real LLM responses)
 # ELEVENLABS_API_KEY=... (enables voice)
-uv sync
-uv run uvicorn src.main:app --reload --port 8000
-```
-
-### 2. Start the frontend
-
-```bash
-cd frontend
 pnpm install
 pnpm dev
 ```
 
-Dashboard will be at http://localhost:3000
+Dashboard + API will be at http://localhost:3000
 
-### 3. Initialize wallets
+### Initialize wallets
 
 Either click "Initialize Wallets" on the dashboard, or:
 ```bash
-curl -X POST http://localhost:8000/api/wallets/init
+curl -X POST http://localhost:3000/api/wallets/init
 ```
 
 This creates Solana devnet wallets for all 5 agents and airdrops 1 SOL each.
@@ -37,29 +27,29 @@ This creates Solana devnet wallets for all 5 agents and airdrops 1 SOL each.
 
 ## Production Deployment
 
-### Backend → Railway
+### Option 1: Railway (recommended)
 
 1. Create a new Railway project
 2. Connect to GitHub repo
-3. Set root directory to `backend`
-4. Set build command: `pip install uv && uv sync`
-5. Set start command: `uv run uvicorn src.main:app --host 0.0.0.0 --port $PORT`
+3. Set root directory to `frontend`
+4. Set build command: `pnpm install && pnpm build`
+5. Set start command: `pnpm start`
 6. Add environment variables from `.env.example`
 
-### Frontend → Vercel
+### Option 2: Vercel
 
 ```bash
 cd frontend
-pnpm install
 npx vercel
 ```
 
 When prompted:
 - Framework: Next.js
 - Root directory: `frontend`
-- Environment variable: `NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app`
 
 Or connect via Vercel dashboard → Import Git Repository → set root to `frontend`.
+
+> Note: Vercel's serverless functions have a 10s timeout on hobby tier (60s on Pro). Set `maxDuration = 60` is already configured on long-running routes. For the best demo experience, use Vercel Pro or Railway.
 
 ### Solana Agent Registration
 
@@ -83,8 +73,7 @@ Save the output — it contains the agent public keys and collection address.
 
 ### Pre-demo checklist
 
-- [ ] Backend running (local or deployed)
-- [ ] Frontend running (local or deployed)
+- [ ] App running (local or deployed)
 - [ ] Wallets initialized (click the button or curl)
 - [ ] Browser open to dashboard at full screen
 - [ ] If voice: ElevenLabs API key set
@@ -175,7 +164,6 @@ LLM_BASE_URL=https://api.openai.com/v1  # Endpoint (default: OpenAI)
 ELEVENLABS_API_KEY=...         # Voice interface
 
 # Optional enhancements:
-KALIBR_API_KEY=...             # Multi-model routing + resilience metrics
 UNBROWSE_URL=http://localhost:6969  # Live web data extraction
 HUMAN_PASSPORT_ENABLED=true   # Sybil-resistant auth
 
@@ -187,13 +175,7 @@ SOLANA_RPC_URL=https://api.devnet.solana.com
 
 ## Troubleshooting
 
-**Backend won't start:**
-```bash
-cd backend && uv sync  # Reinstall deps
-uv run python -c "from src.main import app; print('OK')"  # Test imports
-```
-
-**Frontend build fails:**
+**App won't start:**
 ```bash
 cd frontend && pnpm install  # Reinstall deps
 pnpm build  # Check for errors
@@ -204,11 +186,10 @@ pnpm build  # Check for errors
 - Wait 30 seconds and try again
 - Or use: `solana airdrop 1 <WALLET_ADDRESS> --url devnet`
 
-**SSE events not showing:**
-- Make sure backend is running on port 8000
-- Check CORS: backend allows all origins by default
+**Events not showing:**
+- Make sure the app is running
 - Check browser console for connection errors
 
 **No LLM responses (just "Processed: ..."):**
-- This means no API key is set — add LLM_API_KEY to .env
+- This means no API key is set — add LLM_API_KEY to .env.local
 - The mock responses will still work and look realistic for demo

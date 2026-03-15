@@ -3,8 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import ChatPanel from "./components/ChatPanel";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 interface Agent {
   agent_id: string;
   name: string;
@@ -94,7 +92,6 @@ function formatEventData(data: Record<string, unknown>): React.ReactNode {
     )
   );
 
-  // Priority display fields
   if (filtered.message) {
     const msg = String(filtered.message);
     const explorerUrl = filtered.explorer_url as string | undefined;
@@ -111,7 +108,6 @@ function formatEventData(data: Record<string, unknown>): React.ReactNode {
     return msg;
   }
 
-  // Show explorer URL if present
   if (filtered.explorer_url) {
     return (
       <a href={String(filtered.explorer_url)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
@@ -123,7 +119,6 @@ function formatEventData(data: Record<string, unknown>): React.ReactNode {
   if (filtered.summary) return String(filtered.summary);
   if (filtered.confirmation) return String(filtered.confirmation);
 
-  // Show payment info prominently
   if (filtered.amount_sol !== undefined) {
     return (
       <span>
@@ -155,9 +150,10 @@ export default function Dashboard() {
   const [walletsInitialized, setWalletsInitialized] = useState(false);
   const [initializingWallets, setInitializingWallets] = useState(false);
   const eventsEndRef = useRef<HTMLDivElement>(null);
+  const lastEventTimestamp = useRef<string>("");
 
   const fetchAgents = useCallback(() => {
-    fetch(`${API_URL}/api/agents`)
+    fetch("/api/agents")
       .then((res) => res.json())
       .then(setAgents)
       .catch(() => {});
@@ -170,50 +166,62 @@ export default function Dashboard() {
   }, [fetchAgents]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/wallets`)
+    fetch("/api/wallets")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0 && data[0].wallet_address) {
+        const wallets = data.wallets || data;
+        if (Array.isArray(wallets) && wallets.length > 0 && wallets[0].wallet_address) {
           setWalletsInitialized(true);
         }
       })
       .catch(() => {});
   }, []);
 
+  // Poll for events instead of SSE
   useEffect(() => {
-    const eventSource = new EventSource(`${API_URL}/api/events`);
-    eventSource.onmessage = (e) => {
-      const event: AgentEvent = JSON.parse(e.data);
-      setEvents((prev) => [...prev.slice(-200), event]);
-      fetchAgents();
+    const pollEvents = () => {
+      const since = lastEventTimestamp.current;
+      const url = since ? `/api/events?since=${encodeURIComponent(since)}` : "/api/events";
+      fetch(url)
+        .then((r) => r.json())
+        .then((newEvents: AgentEvent[]) => {
+          if (newEvents.length === 0) return;
 
-      // Track transactions
-      if (
-        event.type === "solana.transfer" ||
-        event.type === "solana.airdrop" ||
-        event.type.includes("payment.completed") ||
-        event.type === "x402.payment_verified"
-      ) {
-        setTransactions((prev) => [
-          ...prev,
-          {
-            from: String(event.data.from || event.data.payer || event.data.agent_name || ""),
-            to: String(event.data.to || event.data.recipient || ""),
-            amount_sol: Number(event.data.amount_sol || event.data.bid_price || 0),
-            signature: String(event.data.signature || event.data.payment_signature || ""),
-            explorer_url: String(event.data.explorer_url || (event.data.signature ? `https://explorer.solana.com/tx/${event.data.signature}?cluster=devnet` : "")),
-            timestamp: event.timestamp,
-          },
-        ]);
-      }
+          setEvents((prev) => [...prev.slice(-200), ...newEvents]);
+          lastEventTimestamp.current = newEvents[newEvents.length - 1].timestamp;
+          fetchAgents();
 
-      // Track stats
-      if (event.type === "orchestrator.complete") {
-        setTaskCount((c) => c + 1);
-        setTotalSpent((s) => s + Number(event.data.total_cost || 0));
-      }
+          for (const event of newEvents) {
+            if (
+              event.type === "solana.transfer" ||
+              event.type === "solana.airdrop" ||
+              event.type.includes("payment.completed") ||
+              event.type === "x402.payment_verified"
+            ) {
+              setTransactions((prev) => [
+                ...prev,
+                {
+                  from: String(event.data.from || event.data.payer || event.data.agent_name || ""),
+                  to: String(event.data.to || event.data.recipient || ""),
+                  amount_sol: Number(event.data.amount_sol || event.data.bid_price || 0),
+                  signature: String(event.data.signature || event.data.payment_signature || ""),
+                  explorer_url: String(event.data.explorer_url || (event.data.signature ? `https://explorer.solana.com/tx/${event.data.signature}?cluster=devnet` : "")),
+                  timestamp: event.timestamp,
+                },
+              ]);
+            }
+
+            if (event.type === "orchestrator.complete") {
+              setTaskCount((c) => c + 1);
+              setTotalSpent((s) => s + Number(event.data.total_cost || 0));
+            }
+          }
+        })
+        .catch(() => {});
     };
-    return () => eventSource.close();
+
+    const interval = setInterval(pollEvents, 1500);
+    return () => clearInterval(interval);
   }, [fetchAgents]);
 
   useEffect(() => {
@@ -223,7 +231,7 @@ export default function Dashboard() {
   const initWallets = async () => {
     setInitializingWallets(true);
     try {
-      const res = await fetch(`${API_URL}/api/wallets/init`, { method: "POST" });
+      const res = await fetch("/api/wallets/init", { method: "POST" });
       const data = await res.json();
       if (data.wallets || data.success !== false) {
         setWalletsInitialized(true);
@@ -239,7 +247,7 @@ export default function Dashboard() {
     if (!taskInput.trim()) return;
     setIsSubmitting(true);
     try {
-      await fetch(`${API_URL}/api/tasks`, {
+      await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: taskInput }),
@@ -255,7 +263,7 @@ export default function Dashboard() {
     setTaskInput(description);
     setIsSubmitting(true);
     try {
-      await fetch(`${API_URL}/api/tasks`, {
+      await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description }),

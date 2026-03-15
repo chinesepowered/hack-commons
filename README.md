@@ -47,13 +47,9 @@ Everything happens live on the dashboard — watch agents think, negotiate, and 
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│           📊 Dashboard (Next.js + SSE)                │
+│        📊 Next.js (Dashboard + API Routes)            │
 │   Agent cards · Live activity · Txn feed · Chat/Voice │
-└────────────────────────┬─────────────────────────────┘
-                         │ SSE + REST
-┌────────────────────────┴─────────────────────────────┐
-│            ⚙️ Backend (FastAPI + Python)               │
-│   Task routing · Agent orchestration · x402 protocol   │
+│   Task routing · Agent orchestration · x402 protocol  │
 └──┬────────┬────────┬────────┬────────┬───────────────┘
    │        │        │        │        │
    ▼        ▼        ▼        ▼        ▼
@@ -92,10 +88,9 @@ This is how agents pay each other — pure HTTP, no intermediaries:
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python, FastAPI, uv |
-| Frontend | Next.js, React, Tailwind CSS, pnpm |
-| Blockchain | Solana (devnet), Metaplex Agent Registry, x402 |
-| LLM Routing | Kalibr (fallback: any OpenAI-compatible API / mock) |
+| App | Next.js, React, TypeScript, Tailwind CSS, pnpm |
+| Blockchain | Solana (devnet), @solana/web3.js, Metaplex Agent Registry, x402 |
+| LLM | Any OpenAI-compatible API (OpenAI, Together, Groq, etc.) / mock fallback |
 | Web Intelligence | Unbrowse (fallback: standard HTTP) |
 | Voice | ElevenLabs (fallback: text chat) |
 | Auth | Human Passport (fallback: wallet auth) |
@@ -103,23 +98,17 @@ This is how agents pay each other — pure HTTP, no intermediaries:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11+ with [uv](https://docs.astral.sh/uv/)
 - Node.js 18+ with [pnpm](https://pnpm.io/)
 
-### Backend
-```bash
-cd backend
-cp .env.example .env  # Add API keys as needed (works without any!)
-uv sync
-uv run uvicorn src.main:app --reload --port 8000
-```
-
-### Frontend
+### Run
 ```bash
 cd frontend
+cp .env.example .env.local  # Add API keys as needed (works without any!)
 pnpm install
 pnpm dev
 ```
+
+Dashboard will be at http://localhost:3000
 
 ### Register Agents on Solana
 ```bash
@@ -131,7 +120,7 @@ pnpm run register
 ### Initialize Wallets
 Click **"Initialize Wallets"** on the dashboard, or:
 ```bash
-curl -X POST http://localhost:8000/api/wallets/init
+curl -X POST http://localhost:3000/api/wallets/init
 ```
 
 ## 📡 API
@@ -139,10 +128,10 @@ curl -X POST http://localhost:8000/api/wallets/init
 ### Core
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/health` | Health check |
+| `GET` | `/api/health` | Health check |
 | `GET` | `/api/agents` | List all agents with status and balances |
 | `POST` | `/api/tasks` | Submit a task to the agent economy |
-| `GET` | `/api/events` | SSE stream of real-time agent activity |
+| `GET` | `/api/events` | Poll for real-time agent activity |
 
 ### Wallets & Payments
 | Method | Path | Description |
@@ -162,12 +151,11 @@ curl -X POST http://localhost:8000/api/wallets/init
 
 ## 🔌 Pluggable Integrations
 
-Every integration gracefully degrades. The entire system works with **zero API keys** — just `uv sync` and go.
+Every integration gracefully degrades. The entire system works with **zero API keys** — just `pnpm install` and go.
 
 | Integration | Purpose | Fallback |
 |-------------|---------|----------|
 | **Unbrowse** | Web data extraction for Researcher | Mock research data |
-| **Kalibr** | Multi-model LLM routing + resilience metrics | Direct LLM API → mock |
 | **ElevenLabs** | Voice interface (talk to your agents!) | Text-only chat |
 | **Human Passport** | Sybil-resistant auth for task posting | Basic wallet auth |
 | **LLM API** | Any OpenAI-compatible endpoint (OpenAI, Together, Groq, etc.) | Realistic mock responses |

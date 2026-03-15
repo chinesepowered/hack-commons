@@ -2,8 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -22,9 +20,8 @@ export default function ChatPanel() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Check voice availability
   useEffect(() => {
-    fetch(`${API_URL}/api/voice/status`)
+    fetch("/api/voice/status")
       .then((r) => r.json())
       .then((data) => setVoiceAvailable(data.voice_available))
       .catch(() => setVoiceAvailable(false));
@@ -48,8 +45,7 @@ export default function ChatPanel() {
 
     try {
       if (useVoice && voiceAvailable) {
-        // Voice mode — get audio response
-        const res = await fetch(`${API_URL}/api/chat/voice`, {
+        const res = await fetch("/api/chat/voice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text }),
@@ -79,8 +75,7 @@ export default function ChatPanel() {
           },
         ]);
       } else {
-        // Text mode
-        const res = await fetch(`${API_URL}/api/chat`, {
+        const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text }),
@@ -101,7 +96,7 @@ export default function ChatPanel() {
         ...prev,
         {
           role: "assistant",
-          content: "Failed to reach the orchestrator. Is the backend running?",
+          content: "Failed to reach the orchestrator. Is the server running?",
           timestamp: new Date(),
         },
       ]);
@@ -122,20 +117,9 @@ export default function ChatPanel() {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((track) => track.stop());
-
-        // Send to STT if available, otherwise notify user
         if (voiceAvailable) {
-          const formData = new FormData();
-          formData.append("file", audioBlob, "recording.webm");
-
-          try {
-            // We'd call an STT endpoint here — for now, fallback to text input
-            setInput("[Voice input — type your message instead]");
-          } catch {
-            setInput("[Voice input failed — type your message]");
-          }
+          setInput("[Voice input — type your message instead]");
         }
       };
 
