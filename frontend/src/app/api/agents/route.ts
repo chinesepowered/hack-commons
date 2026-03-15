@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { registry } from "@/lib/agents/registry";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const refresh = request.nextUrl.searchParams.get("refresh") === "true";
+
   const agentList = [];
   for (const a of registry.allAgents) {
-    let balance = 0;
-    if (a.profile.walletKeypair) {
+    let balance = a.profile.balance;
+    // Only hit RPC if explicitly requested (e.g. after wallet init)
+    if (refresh && a.profile.walletKeypair) {
       balance = await a.getBalance();
     }
     agentList.push({

@@ -48,10 +48,10 @@ Be decisive. Give specific numbers, not ranges. State your recommendation clearl
       summary: analysis.slice(0, 200),
     });
 
-    return { success: true, data: { analysis }, cost: 0.002 };
+    return { success: true, data: { analysis }, cost: 0.0002 };
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "analysis" ? 0.002 : null;
+    return task.type === "analysis" ? 0.0002 : null;
   }
 }

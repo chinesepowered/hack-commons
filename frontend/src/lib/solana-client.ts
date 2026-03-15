@@ -8,31 +8,25 @@ import {
 } from "@solana/web3.js";
 import { config } from "./config";
 import { eventBus } from "./events";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
-
-const WALLETS_DIR = path.join(os.tmpdir(), "agentcommerce-wallets");
 
 class SolanaClient {
   private connection: Connection;
 
   constructor() {
     this.connection = new Connection(config.solanaRpcUrl, "confirmed");
-    if (!fs.existsSync(WALLETS_DIR)) {
-      fs.mkdirSync(WALLETS_DIR, { recursive: true });
-    }
   }
 
-  getOrCreateWallet(agentId: string): Keypair {
-    const walletPath = path.join(WALLETS_DIR, `${agentId}.json`);
-    if (fs.existsSync(walletPath)) {
-      const secret = JSON.parse(fs.readFileSync(walletPath, "utf-8"));
-      return Keypair.fromSecretKey(Uint8Array.from(secret));
+  getWalletFromEnv(agentId: string): Keypair | null {
+    const envKey = `${agentId.toUpperCase()}_PRIVATE_KEY`;
+    const b64 = process.env[envKey];
+    if (!b64) return null;
+    try {
+      const secret = Buffer.from(b64, "base64");
+      return Keypair.fromSecretKey(secret);
+    } catch (e) {
+      console.error(`Invalid key for ${agentId}:`, e);
+      return null;
     }
-    const kp = Keypair.generate();
-    fs.writeFileSync(walletPath, JSON.stringify(Array.from(kp.secretKey)));
-    return kp;
   }
 
   async airdrop(pubkey: PublicKey, amountSol: number = 1.0): Promise<string | null> {

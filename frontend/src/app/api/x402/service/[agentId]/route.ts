@@ -5,10 +5,10 @@ import { eventBus } from "@/lib/events";
 import { BaseAgent } from "@/lib/agents/base";
 
 const SERVICE_PRICES: Record<string, number> = {
-  researcher: 0.001,
-  analyst: 0.002,
-  executor: 0.005,
-  frontier_tower: 0.001,
+  researcher: 0.0001,
+  analyst: 0.0002,
+  executor: 0.0005,
+  frontier_tower: 0.0001,
 };
 
 export async function POST(

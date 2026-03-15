@@ -68,11 +68,11 @@ Be specific with numbers, protocol names, and verifiable facts. Do not hedge —
     return {
       success: true,
       data: { research, source: webData ? "unbrowse" : "llm" },
-      cost: 0.001,
+      cost: 0.0001,
     };
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "research" ? 0.001 : null;
+    return task.type === "research" ? 0.0001 : null;
   }
 }

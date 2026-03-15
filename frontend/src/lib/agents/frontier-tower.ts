@@ -3,11 +3,11 @@ import { TaskResult, TaskInput } from "./types";
 import { llmCompletion } from "../llm";
 
 const SERVICES: Record<string, { price: number; description: string }> = {
-  room_booking: { price: 0.01, description: "Book a room on any floor" },
-  day_pass: { price: 0.05, description: "Purchase a day pass" },
-  bounty_post: { price: 0.002, description: "Post a bounty to a specific floor" },
-  resource_match: { price: 0.001, description: "Find someone with specific skills" },
-  event_schedule: { price: 0.003, description: "Schedule an event" },
+  room_booking: { price: 0.001, description: "Book a room on any floor" },
+  day_pass: { price: 0.005, description: "Purchase a day pass" },
+  bounty_post: { price: 0.0002, description: "Post a bounty to a specific floor" },
+  resource_match: { price: 0.0001, description: "Find someone with specific skills" },
+  event_schedule: { price: 0.0003, description: "Schedule an event" },
 };
 
 function detectService(description: string): string {
@@ -81,6 +81,6 @@ Respond as if you're confirming the service. Include specific details (floor num
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "frontier_tower" ? 0.001 : null;
+    return task.type === "frontier_tower" ? 0.0001 : null;
   }
 }

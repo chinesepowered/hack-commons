@@ -32,6 +32,11 @@ class AgentRegistry {
       this.executor,
       this.frontierTower,
     ];
+
+    // Auto-init wallets from env on startup
+    for (const agent of this.allAgents) {
+      agent.initWallet();
+    }
   }
 }
 

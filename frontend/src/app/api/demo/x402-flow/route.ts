@@ -18,13 +18,13 @@ export async function POST() {
     message: "Starting x402 payment demo: Orchestrator → Researcher",
     payer: orchestrator.profile.walletKeypair.publicKey.toBase58(),
     recipient: researcher.profile.walletKeypair.publicKey.toBase58(),
-    amount_sol: 0.001,
+    amount_sol: 0.0001,
   });
 
   const paymentHeader = await createAndSendPayment(
     orchestrator.profile.walletKeypair,
     researcher.profile.walletKeypair.publicKey,
-    0.001
+    0.0001
   );
 
   if (!paymentHeader) {

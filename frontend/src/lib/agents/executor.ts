@@ -59,11 +59,11 @@ Note: This is a devnet simulation. Be specific about which programs/protocols yo
     return {
       success: true,
       data: { execution_plan: plan, status: "simulated", network: "devnet" },
-      cost: 0.005,
+      cost: 0.0005,
     };
   }
 
   async bid(task: TaskInput): Promise<number | null> {
-    return task.type === "execution" ? 0.005 : null;
+    return task.type === "execution" ? 0.0005 : null;
   }
 }

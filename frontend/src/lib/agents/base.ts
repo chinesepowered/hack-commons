@@ -2,9 +2,12 @@ import { AgentProfile, TaskResult, TaskInput } from "./types";
 import { eventBus } from "../events";
 import { solanaClient } from "../solana-client";
 
+const BALANCE_CACHE_MS = 15_000; // Only refresh balance every 15s
+
 export abstract class BaseAgent {
   profile: AgentProfile;
   taskHistory: Record<string, unknown>[] = [];
+  private lastBalanceFetch = 0;
 
   constructor(profile: Omit<AgentProfile, "walletAddress" | "metaplexAssetId" | "balance" | "status" | "walletKeypair">) {
     this.profile = {
@@ -18,15 +21,24 @@ export abstract class BaseAgent {
   }
 
   initWallet() {
-    const kp = solanaClient.getOrCreateWallet(this.profile.agentId);
+    const kp = solanaClient.getWalletFromEnv(this.profile.agentId);
+    if (!kp) {
+      console.error(`No wallet key found for ${this.profile.agentId} — set ${this.profile.agentId.toUpperCase()}_PRIVATE_KEY in .env.local`);
+      return;
+    }
     this.profile.walletKeypair = kp;
     this.profile.walletAddress = kp.publicKey.toBase58();
   }
 
-  async getBalance(): Promise<number> {
+  async getBalance(forceRefresh = false): Promise<number> {
     if (!this.profile.walletKeypair) return 0;
+    const now = Date.now();
+    if (!forceRefresh && now - this.lastBalanceFetch < BALANCE_CACHE_MS) {
+      return this.profile.balance;
+    }
     const balance = await solanaClient.getBalance(this.profile.walletKeypair.publicKey);
     this.profile.balance = balance;
+    this.lastBalanceFetch = now;
     return balance;
   }
 
@@ -42,6 +54,9 @@ export abstract class BaseAgent {
       amountSol
     );
     if (sig) {
+      // Invalidate balance cache for both agents after payment
+      this.lastBalanceFetch = 0;
+      recipient.lastBalanceFetch = 0;
       this.emit("agent.payment.sent", {
         to_agent: recipient.profile.agentId,
         to_wallet: recipient.profile.walletAddress,

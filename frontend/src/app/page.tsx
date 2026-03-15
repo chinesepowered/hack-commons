@@ -152,8 +152,9 @@ export default function Dashboard() {
   const eventsEndRef = useRef<HTMLDivElement>(null);
   const lastEventTimestamp = useRef<string>("");
 
-  const fetchAgents = useCallback(() => {
-    fetch("/api/agents")
+  const fetchAgents = useCallback((refresh = false) => {
+    const url = refresh ? "/api/agents?refresh=true" : "/api/agents";
+    fetch(url)
       .then((res) => res.json())
       .then(setAgents)
       .catch(() => {});
@@ -189,15 +190,17 @@ export default function Dashboard() {
 
           setEvents((prev) => [...prev.slice(-200), ...newEvents]);
           lastEventTimestamp.current = newEvents[newEvents.length - 1].timestamp;
-          fetchAgents();
 
+          let hasPayment = false;
           for (const event of newEvents) {
-            if (
+            const isPaymentEvent =
               event.type === "solana.transfer" ||
               event.type === "solana.airdrop" ||
               event.type.includes("payment.completed") ||
-              event.type === "x402.payment_verified"
-            ) {
+              event.type === "x402.payment_verified";
+
+            if (isPaymentEvent) {
+              hasPayment = true;
               setTransactions((prev) => [
                 ...prev,
                 {
@@ -216,6 +219,9 @@ export default function Dashboard() {
               setTotalSpent((s) => s + Number(event.data.total_cost || 0));
             }
           }
+
+          // Only refresh balances from RPC when payments happened
+          fetchAgents(hasPayment);
         })
         .catch(() => {});
     };
@@ -235,7 +241,7 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.wallets || data.success !== false) {
         setWalletsInitialized(true);
-        fetchAgents();
+        fetchAgents(true);
       }
     } catch (err) {
       console.error("Failed to init wallets:", err);

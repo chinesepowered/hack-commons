@@ -161,9 +161,9 @@ Based on historical data, current market conditions, and protocol fundamentals.`
 4. **Verify** — Confirm LP position NFT received and range is active
 
 ### Estimated Costs
-- Swap fee: ~0.001 SOL
-- LP deposit: ~0.002 SOL (transaction fees)
-- Total: ~0.003 SOL
+- Swap fee: ~0.0001 SOL
+- LP deposit: ~0.0002 SOL (transaction fees)
+- Total: ~0.0003 SOL
 
 ### Risk Level: MEDIUM
 - Slippage protection: 0.5% max
