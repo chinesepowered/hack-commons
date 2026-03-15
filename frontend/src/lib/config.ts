@@ -6,4 +6,7 @@ export const config = {
   elevenlabsApiKey: process.env.ELEVENLABS_API_KEY || "",
   unbrowseUrl: process.env.UNBROWSE_URL || "http://localhost:6969",
   humanPassportEnabled: process.env.HUMAN_PASSPORT_ENABLED === "true",
+  humanPassportApiKey: process.env.HUMAN_PASSPORT_API_KEY || "",
+  humanPassportScorerId: process.env.HUMAN_PASSPORT_SCORER_ID || "",
+  humanPassportThreshold: parseInt(process.env.HUMAN_PASSPORT_THRESHOLD || "20", 10),
 };

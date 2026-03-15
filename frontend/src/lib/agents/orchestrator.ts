@@ -61,11 +61,14 @@ export class OrchestratorAgent extends BaseAgent {
       });
 
       const result = await bestAgent.receiveTask(subTask);
-      totalCost += bidPrice;
+
+      // Use the agent's returned cost (e.g. negotiated price) if available, otherwise the bid price
+      const finalCost = (result.cost != null && result.cost > 0) ? result.cost : bidPrice;
+      totalCost += finalCost;
 
       let paymentSig: string | null = null;
-      if (result.success && bidPrice > 0) {
-        paymentSig = await this.payAgent(bestAgent, bidPrice);
+      if (result.success && finalCost > 0) {
+        paymentSig = await this.payAgent(bestAgent, finalCost);
       }
 
       results.push({
@@ -73,7 +76,7 @@ export class OrchestratorAgent extends BaseAgent {
         agent_id: bestAgent.profile.agentId,
         task_type: subTask.type,
         result: result.data,
-        cost: bidPrice,
+        cost: finalCost,
         success: result.success,
         payment_signature: paymentSig,
       });

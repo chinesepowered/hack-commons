@@ -391,7 +391,7 @@ export default function Dashboard() {
         <div className="mb-6 flex flex-wrap gap-2">
           <span className="text-[11px] text-zinc-500 self-center mr-1">Quick tasks:</span>
           {[
-            { label: "\u{1F50D} Research Solana DeFi", task: "Research the top 3 Solana DeFi protocols by TVL, analyze their yield opportunities, and recommend the best LP position for a $1000 investment" },
+            { label: "\u{1F50D} Find Solana DeFi Packages", task: "Find npm packages for Solana DeFi" },
             { label: "\u{1F3E2} Book Frontier Tower Room", task: "Book a meeting room on Floor 5 at Frontier Tower for a robotics workshop next Tuesday, need space for 20 people with a projector" },
             { label: "\u{1F4CA} Analyze & Trade", task: "Research SOL/USDC price action, analyze whether it's a good entry point, and execute a limit order if conditions are favorable" },
             { label: "\u{1F91D} Find Expert", task: "Find someone at Frontier Tower with robotics and computer vision expertise who could help with a VLA pipeline project" },

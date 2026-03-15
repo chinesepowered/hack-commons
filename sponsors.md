@@ -83,48 +83,114 @@ A multi-agent economy where 5 AI agents coordinate autonomously on Solana. Agent
 ## Unbrowse — Data Layer ($1,500)
 
 ### What we built
-The Researcher agent uses Unbrowse as its primary data source. When a research task comes in, it calls the Unbrowse local API to extract web intelligence, then synthesizes findings via LLM.
+The Researcher agent uses Unbrowse as its primary web intelligence layer. When a research task arrives, the agent queries the Unbrowse Skill Marketplace to find relevant cached skills, then executes matching skills to pull real-time web data — all without needing a browser.
 
-### Integration
-- **Endpoint:** `POST http://localhost:6969/v1/intent/resolve`
-- **Payload:** `{ "intent": "<task description>", "params": {} }`
-- Falls back gracefully to LLM knowledge when Unbrowse is unavailable
-- Dashboard shows "Retrieved data via Unbrowse" or "Unbrowse unavailable, using LLM knowledge"
+### Integration architecture
+Unbrowse runs as a local API server on port 6969. The Researcher agent uses three endpoints in sequence:
+
+1. **Marketplace Search** (`POST /v1/search`) — Searches the Unbrowse skill marketplace for skills matching the task intent. Returns ranked skill matches.
+2. **Cached Skills** (`GET /v1/skills`) — Lists all locally cached skills available for direct execution.
+3. **Skill Execution** (`POST /v1/skills/{skillId}/execute`) — Executes a specific cached skill with parameters. Returns structured web data without any browser interaction.
+
+### How it works in the agent pipeline
+1. Researcher agent receives a task from the Orchestrator
+2. Checks Unbrowse health (`GET /health`)
+3. Searches the skill marketplace for relevant skills matching the task
+4. Lists locally cached skills and matches them by intent keywords
+5. If a matching skill is found, executes it directly (e.g., npm package search)
+6. If no skill matches, falls back to LLM knowledge
+7. Synthesizes all collected data into a research report via LLM
+
+### Known cached skills
+| Skill | Domain | Use case |
+|-------|--------|----------|
+| npm search | www.npmjs.com | Search for packages by keyword |
+| trendyol | trendyol.com | Product search |
+| saucedemo | www.saucedemo.com | Demo/testing |
+| httpbin | httpbin.org | API testing |
+
+### Direct skill execution
+The npm skill (`k4OAjKpz-wJ4p_KfNSQ03`) is mapped as a known skill for direct execution. Tasks containing keywords like "package", "npm", "library", "sdk", or "module" trigger it automatically, bypassing marketplace search.
+
+### Dashboard visibility
+The activity feed shows the full Unbrowse flow in real time:
+- "Searched Unbrowse skill marketplace" — marketplace query completed
+- "Found N cached Unbrowse skills" — local skills discovered
+- "Executed npm search via Unbrowse skill" — skill executed successfully
+- "No matching Unbrowse skill found, using LLM knowledge" — graceful fallback
+
+### Why not resolve?
+Unbrowse's `resolve` endpoint (`/v1/intent/resolve`) uses browser capture to extract data from arbitrary web pages. This requires a headed browser environment, which isn't available in WSL2 or serverless deployments. The skill marketplace + execution approach is more reliable, faster, and produces structured data — making it a better fit for autonomous agents.
 
 ### Key files
-- `frontend/src/lib/integrations/unbrowse.ts` — HTTP client
-- `frontend/src/lib/agents/researcher.ts` — tries Unbrowse first, falls back to LLM
-
-### Note
-Unbrowse server has a Windows + Node 24 compatibility issue (`ERR_UNSUPPORTED_ESM_URL_SCHEME`). Integration code is complete and tested against the API spec. Works on Mac/Linux or with Node 22.
+- `frontend/src/lib/integrations/unbrowse.ts` — HTTP client for all Unbrowse endpoints (search, execute, skills, resolve, health)
+- `frontend/src/lib/agents/researcher.ts` — full Unbrowse integration with marketplace search, skill matching, execution, and LLM fallback
 
 ---
 
 ## Human.tech — Made by Human ($1,200)
 
 ### What we built
-Human sovereignty is a core design principle. Only verified humans can post tasks, set budgets, and approve high-value agent actions. Agents are transparent — every decision is visible on the real-time dashboard.
+Human sovereignty is a core design principle. Only verified humans can post tasks — enforced by Human Passport (formerly Gitcoin Passport), which checks each wallet's Unique Humanity Score against a configurable threshold. Agents are transparent — every decision is visible on the real-time dashboard.
 
 ### Integration
-- `verifyHuman()` function gates task submission via Human Passport
-- When `HUMAN_PASSPORT_ENABLED=true`, the `/api/tasks` endpoint verifies the caller before allowing task creation
-- Falls back to open access when not configured (for local dev)
-- Aligns with the Voluntary Accountability covenant: agents act autonomously within human-defined boundaries
+- **API:** `GET https://api.passport.xyz/v2/stamps/{scorer_id}/score/{address}` — retrieves a wallet's humanity score and stamp data
+- **Auth:** `X-API-KEY` header with Human Passport API key
+- **Flow:** When `HUMAN_PASSPORT_ENABLED=true`, the `/api/tasks` endpoint calls `verifyHuman(walletAddress)` before allowing task creation
+- **Threshold:** Configurable via `HUMAN_PASSPORT_THRESHOLD` (default: 20, recommended by Human Passport)
+- **Rejection:** Returns HTTP 403 with score details and a link to `https://passport.human.tech` so users can build their score
+- **Fallback:** When not enabled, tasks go through without verification (for local dev)
+
+### How it works
+1. User submits a task with their wallet address
+2. `verifyHuman()` calls the Human Passport Stamps API
+3. API returns the wallet's Unique Humanity Score (based on verified credentials: Discord, Google, NFT holdings, Coinbase, BrightID, etc.)
+4. If `passing_score` is true, the task proceeds to the Orchestrator
+5. If the score is below threshold or no passport exists, the task is rejected with details
 
 ### Covenant alignment
-- Only verified humans can post tasks
+- Only verified humans can post tasks — enforced by Human Passport score
 - Humans set budgets and approval thresholds
 - High-value transactions require human sign-off
 - Every agent action is transparent on the real-time dashboard
 - Agents explain their reasoning at every step
 
-### Key files
-- `frontend/src/lib/integrations/human-passport.ts` — verification stub (ready for API integration)
-- `frontend/src/app/api/tasks/route.ts` — human verification before task creation
+### Environment variables
+```
+HUMAN_PASSPORT_ENABLED=true
+HUMAN_PASSPORT_API_KEY=your_api_key
+HUMAN_PASSPORT_SCORER_ID=your_scorer_id
+HUMAN_PASSPORT_THRESHOLD=20
+```
 
-### TODO
-- Register at frontier.human.tech
-- Integrate Human Passport SDK when docs are available
+### Verification (live API test)
+
+Scorer ID `11965`, created 2026-03-14. Tested against a zero-stamp address:
+
+```bash
+curl -s "https://api.passport.xyz/v2/stamps/11965/score/0x0000000000000000000000000000000000000001" \
+  -H "X-API-KEY: $HUMAN_PASSPORT_API_KEY"
+```
+
+```json
+{
+  "address": "0x0000000000000000000000000000000000000001",
+  "score": "0.00000",
+  "passing_score": false,
+  "last_score_timestamp": "2026-03-15T06:25:15.031623+00:00",
+  "expiration_timestamp": null,
+  "threshold": "20.00000",
+  "error": null,
+  "stamps": {}
+}
+```
+
+Result: `passing_score: false` — unverified wallet correctly rejected. A wallet with verified credentials (Discord, Google, Coinbase, etc.) scoring 20+ would return `passing_score: true` and be allowed to submit tasks.
+
+### Key files
+- `frontend/src/lib/integrations/human-passport.ts` — Human Passport API client (verifyHuman, getPassportScore, humanPassportStatus)
+- `frontend/src/app/api/tasks/route.ts` — human verification gate before task creation
+- `frontend/src/lib/config.ts` — passport configuration (API key, scorer ID, threshold)
 
 ---
 
@@ -133,22 +199,36 @@ Human sovereignty is a core design principle. Only verified humans can post task
 ### What we built
 Frontier Tower exists as a first-class agent in the AgentCommerce economy. It represents the 16-floor SF innovation hub (700+ members) and offers building services that other agents or humans can discover and pay for via x402.
 
+The standout feature is **autonomous price negotiation**: when booking a room, the Orchestrator (acting as buyer) and Frontier Tower (as seller) engage in a multi-round LLM-powered negotiation — referencing competing venues, making counter-offers, and settling on a discount.
+
+### Negotiation flow (room bookings)
+
+| Round | Speaker | Action |
+|-------|---------|--------|
+| 1 | Frontier Tower | Quotes list price (0.001 SOL), pitches premium amenities |
+| 2 | Orchestrator (Buyer) | Counter-offers citing a competing venue (WeWork Mission, Galvanize SF, TechShop, or Hacker Dojo) at a lower price |
+| 3 | Frontier Tower | Acknowledges competition, counters at a middle price (never below 60% of list), offers a perk |
+| 4 | Orchestrator (Buyer) | Accepts the negotiated deal |
+
+Each round emits a distinct event visible in the live activity feed, showing the full back-and-forth in real time. The final agreed price includes the discount percentage and which competing venue was referenced.
+
 ### Services
 
-| Service | Price (SOL) | Description |
-|---------|------------|-------------|
-| Room booking | 0.001 | Book a room on any floor |
-| Day pass | 0.005 | Purchase a day pass |
-| Bounty posting | 0.0002 | Post a bounty to a specific floor |
-| Resource matching | 0.0001 | Find someone with specific skills |
-| Event scheduling | 0.0003 | Schedule an event |
+| Service | List Price (SOL) | Description | Negotiable? |
+|---------|-----------------|-------------|-------------|
+| Room booking | 0.001 | Book a room on any floor | Yes — multi-round negotiation |
+| Day pass | 0.005 | Purchase a day pass | No |
+| Bounty posting | 0.0002 | Post a bounty to a specific floor | No |
+| Resource matching | 0.0001 | Find someone with specific skills | No |
+| Event scheduling | 0.0003 | Schedule an event | No |
 
 ### How it works
 1. Task mentions Frontier Tower, rooms, events, experts, etc.
 2. Orchestrator routes to Frontier Tower agent
 3. Agent detects service type from description keywords
-4. LLM generates a contextual response with specific floor/room/member details
-5. Agent gets paid via x402
+4. For room bookings: 4-round negotiation with competing venue references and counter-offers
+5. For other services: LLM generates a contextual response with specific floor/room/member details
+6. Agent gets paid the negotiated (or list) price via x402
 
 ### Floor directory (built into agent knowledge)
 - Floor 1-2: Commons, maker spaces, event halls
@@ -165,7 +245,7 @@ Frontier Tower exists as a first-class agent in the AgentCommerce economy. It re
 - x402 endpoint: `/api/x402/service/frontier_tower`
 
 ### Key files
-- `frontend/src/lib/agents/frontier-tower.ts` — service detection, LLM response generation
+- `frontend/src/lib/agents/frontier-tower.ts` — service detection, negotiation engine, LLM response generation
 - `frontend/src/app/api/x402/service/[agentId]/route.ts` — x402-protected endpoint
 
 ---
