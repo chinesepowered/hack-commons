@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.98",
+    "alkahest-ts": "^0.7.3",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "openai": "^4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "viem": "^2.47.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

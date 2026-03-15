@@ -1,6 +1,7 @@
 import { BaseAgent } from "./base";
 import { TaskResult, TaskInput } from "./types";
 import { llmCompletion } from "../llm";
+import { recordNegotiationAgreement, isAlkahestConfigured } from "../integrations/alkahest";
 
 const SERVICES: Record<string, { price: number; description: string }> = {
   room_booking: { price: 0.001, description: "Book a room on any floor" },
@@ -174,6 +175,42 @@ This is a fair deal — accept it. Mention you appreciate the discount and the a
       competing_venue: competitor.name,
     });
 
+    // === Record agreement on-chain via Alkahest (Base Sepolia) ===
+    let alkahestAttestation: { uid: string; txHash: string; explorerUrl: string } | null = null;
+    if (isAlkahestConfigured()) {
+      try {
+        this.emit("frontier_tower.alkahest.creating", {
+          message: "Recording negotiation agreement on Base Sepolia via Alkahest...",
+        });
+
+        alkahestAttestation = await recordNegotiationAgreement({
+          service: "room_booking",
+          buyer: "orchestrator",
+          seller: "frontier_tower",
+          list_price_sol: listPrice,
+          negotiated_price_sol: finalPrice,
+          discount_pct: discount,
+          competing_venue: competitor.name,
+          rounds: negotiationLog.length,
+          timestamp: new Date().toISOString(),
+          solana_network: "devnet",
+        });
+
+        if (alkahestAttestation) {
+          this.emit("frontier_tower.alkahest.recorded", {
+            message: `Negotiation agreement attested on Base Sepolia`,
+            attestation_uid: alkahestAttestation.uid,
+            tx_hash: alkahestAttestation.txHash,
+            explorer_url: alkahestAttestation.explorerUrl,
+          });
+        }
+      } catch (err) {
+        this.emit("frontier_tower.alkahest.skipped", {
+          message: `Alkahest attestation failed: ${err instanceof Error ? err.message : "unknown"}`,
+        });
+      }
+    }
+
     // === Generate final booking confirmation ===
     const systemPrompt = `You are the Frontier Tower AI concierge — managing a 16-floor innovation hub in San Francisco with 700+ members across AI, robotics, neurotech, biotech, and arts.
 
@@ -213,6 +250,7 @@ The client just negotiated the room booking down from ${listPrice} SOL to ${fina
         negotiation_rounds: negotiationLog.length,
         negotiation_log: negotiationLog,
         competing_venue_referenced: competitor.name,
+        alkahest_attestation: alkahestAttestation,
       },
       cost: finalPrice,
     };

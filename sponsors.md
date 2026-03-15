@@ -250,6 +250,45 @@ Each round emits a distinct event visible in the live activity feed, showing the
 
 ---
 
+## Arkhai — Agentic Commerce ($1,000)
+
+### What we built
+After agents negotiate a room booking price, the agreed terms are recorded as an on-chain attestation on Base Sepolia via Alkahest's `StringObligation`. This creates a verifiable, cross-chain record of the agent-to-agent agreement — linking the Solana payment to an EAS attestation on Base.
+
+### Integration
+- **SDK:** `alkahest-ts` v0.7.3 + `viem`
+- **Chain:** Base Sepolia (pre-deployed Alkahest contracts)
+- **Method:** `client.stringObligation.doObligationJson(agreement)` — records the negotiation agreement as a JSON attestation
+- Only triggers for room bookings after negotiation completes — all other flows are unaffected
+- Skips gracefully if `ALKAHEST_PRIVATE_KEY` is not set
+
+### What gets attested
+```json
+{
+  "service": "room_booking",
+  "buyer": "orchestrator",
+  "seller": "frontier_tower",
+  "list_price_sol": 0.001,
+  "negotiated_price_sol": 0.0007,
+  "discount_pct": 30,
+  "competing_venue": "Hacker Dojo",
+  "rounds": 4,
+  "timestamp": "2026-03-15T...",
+  "solana_network": "devnet"
+}
+```
+
+### Verification
+Test attestation on Base Sepolia:
+- TX: `0x7d5ea78e4d4ee8541e723b7156c79e2c450d8cfd4b6e486307c569b559498bca`
+- Attestation: `https://base-sepolia.easscan.org/attestation/view/0x3fe1ab1177119a3b2ebc9e0f666cdcb4716425f44fd132a6e9a7c1d8fee3db3a`
+
+### Key files
+- `frontend/src/lib/integrations/alkahest.ts` — Alkahest client, `recordNegotiationAgreement()`
+- `frontend/src/lib/agents/frontier-tower.ts` — calls Alkahest after negotiation agreement
+
+---
+
 ## ElevenLabs — Voice Challenge (credits)
 
 ### What we built

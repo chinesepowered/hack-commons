@@ -26,9 +26,10 @@ Built for the **Intelligence at the Frontier** hackathon.
 
 ## Key features
 
-### Autonomous price negotiation
+### Autonomous price negotiation + cross-chain attestation
 When booking a room, the Orchestrator and Frontier Tower agent engage in a 4-round negotiation:
 - Frontier Tower quotes list price → Orchestrator counters citing a competing venue (WeWork, Galvanize, etc.) → Frontier Tower counter-offers with a perk → deal agreed at a discount. All visible in the live activity feed.
+- The agreed terms are recorded as an on-chain attestation on Base Sepolia via Arkhai's Alkahest protocol — creating a verifiable cross-chain record linking the Solana payment to the EAS attestation.
 
 ### Unbrowse skill marketplace integration
 The Researcher agent uses Unbrowse's skill marketplace (`/v1/search`) and cached skill execution (`/v1/skills/{id}/execute`) to pull real-time web data — no browser required. Includes a pre-mapped npm search skill for package discovery.
@@ -82,4 +83,5 @@ See [sponsors.md](../sponsors.md) for detailed integration documentation.
 | **Unbrowse** | Skill marketplace search + execution for web intelligence |
 | **Human.tech** | Human verification gates task submission |
 | **Frontier Tower** | First-class agent with autonomous price negotiation |
+| **Arkhai** | Cross-chain negotiation attestations via Alkahest on Base Sepolia |
 | **ElevenLabs** | Voice input/output for the Orchestrator |
